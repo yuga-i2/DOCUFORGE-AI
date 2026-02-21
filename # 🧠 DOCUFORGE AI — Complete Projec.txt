@@ -1,0 +1,433 @@
+# 🧠 DOCUFORGE AI — Complete Project Blueprint
+
+### *The Only Project You Need to Land Any AI/ML/Agentic AI Internship*
+
+---
+
+## 🎯 THE ONE-LINE PITCH
+
+> An autonomous multi-agent AI platform that accepts any document — PDF, image, spreadsheet, audio — and deploys a team of specialized AI agents that collaborate, reason, retrieve, analyze, write, verify, and act on that information, all orchestrated through LangChain with full observability, bias testing, and zero cost to run.
+
+---
+
+## 🧩 WHAT PROBLEM DOES IT SOLVE?
+
+Every company — from a 5-person startup to a Fortune 500 — is drowning in unstructured data. Contracts nobody reads. Research papers nobody summarizes. Financial reports nobody analyzes fast enough. Customer queries nobody answers at 3AM.
+
+Current "AI solutions" in the market are shallow — they're basically fancy search boxes. They use a single LLM call, have no memory, no self-verification, no ability to take actions, and hallucinate constantly.
+
+**DocuForge AI solves this with a true multi-agent system** where each agent has a specific job, agents communicate with each other, the system verifies its own outputs, learns from past interactions, and can actually take actions in the real world — send emails, update databases, create tickets.
+
+This is exactly what companies are building in their AI teams right now. You're not building a demo. You're building what's actually in production at AI-first companies.
+
+---
+
+## 🏛️ THE THREE PILLARS OF THE PROJECT
+
+The project is divided into three distinct deployable modules. Each module directly maps to the three lines in the JD you shared.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        DOCUFORGE AI                             │
+│                                                                 │
+│  PILLAR 1           PILLAR 2              PILLAR 3              │
+│  ─────────          ─────────             ─────────             │
+│  Automation +       LLM Integration +     Testing +             │
+│  Data Analysis +    RAG + Vector DB +     Benchmarking +        │
+│  Customer Support   External Tools        Bias Detection        │
+│                                                                 │
+│  Framework:         Framework:            Framework:            │
+│  LangChain +        LangChain +           LangSmith +           │
+│  LangGraph          ChromaDB +            Custom Eval           │
+│  AutoGen            Supabase              Pipeline              │
+│  CrewAI             MongoDB                                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 👥 THE 7 AGENTS — WHO THEY ARE AND WHAT THEY DO
+
+Think of this as a company. Every agent is an employee with a job title, skills, and responsibilities. The Supervisor is the manager who decides who does what.
+
+---
+
+### 🧭 AGENT 0 — The Supervisor (Orchestrator)
+
+**Job Title:** Chief of Staff
+
+**What it does:** This is the brain of the entire system. When a user submits a document and a query, the Supervisor reads the request, breaks it into sub-tasks, decides which agents to call in what order, passes results between agents, detects if any agent failed or hallucinated, and re-routes accordingly. It never does the actual work itself — it just manages who does what.
+
+**LangChain Role:** Built as the central LangGraph StateGraph node with conditional edges that route to other agents based on the current state of the task.
+
+**Why it matters for JDs:** Every AI JD asks for "multi-agent orchestration experience." The Supervisor is what makes this a real orchestration system, not just multiple chatbots.
+
+---
+
+### 📥 AGENT 1 — The Ingestion Agent (Multimodal Parser)
+
+**Job Title:** Data Intake Specialist
+
+**What it does:** This agent is the first one called for every task. It receives whatever the user uploads — a scanned PDF invoice, a photo of a whiteboard, an Excel report, an audio recording of a meeting, a PowerPoint deck — and converts everything into clean, structured text that the other agents can work with.
+
+For a PDF, it extracts text and tables. For an image, it uses a vision model to describe and extract text from the image. For audio, it transcribes speech to text. For Excel, it reads rows and columns into structured JSON. The output is always a clean, unified text format regardless of what format came in.
+
+**Why it matters for JDs:** This is your **multimodality** proof. You didn't just connect to an API — you built a pipeline that handles five different input types and normalizes them.
+
+---
+
+### 📚 AGENT 2 — The RAG Agent (Knowledge Retriever)
+
+**Job Title:** Research Librarian
+
+**What it does:** This agent takes the user's query and the cleaned document text from Agent 1, chunks the document intelligently, creates embeddings (mathematical representations of meaning), stores them in a vector database (ChromaDB), and then retrieves the most relevant chunks when a question is asked.
+
+It uses **hybrid search** — combining semantic search (finding chunks that *mean* the same thing as the query) with keyword search (finding chunks that contain the *exact words*). This is far more powerful than either approach alone. The agent also re-ranks results to surface the most relevant context before passing it to other agents.
+
+**Why it matters for JDs:** RAG pipelines and vector databases are mentioned in literally every AI engineering JD. This agent is your RAG proof — and hybrid search puts you above 90% of candidates who only know basic semantic RAG.
+
+---
+
+### 🌐 AGENT 3 — The Research Agent (External Tool Caller)
+
+**Job Title:** Real-Time Intelligence Analyst
+
+**What it does:** Sometimes a document's context is insufficient. The user might ask "Is this contract standard for 2025 market rates?" or "What are competitors doing in this space?" Agent 2 can only answer from the uploaded document — it has no external knowledge.
+
+The Research Agent steps in when the Supervisor detects the question requires external information. It uses **MCP (Model Context Protocol) tool servers** to search the web in real time, fetch specific URLs, query external APIs, and bring back fresh information that wasn't in the original document. It then passes this external context back to the Supervisor to combine with the document context.
+
+**Why it matters for JDs:** Tool calling, external database connection, and MCP integration are all hot skills. This agent proves you can connect LLMs to the real world, not just internal documents.
+
+---
+
+### 📊 AGENT 4 — The Analyst Agent (Data Reasoner)
+
+**Job Title:** Data Scientist
+
+**What it does:** This agent receives structured data (tables, numbers, time series) from the RAG Agent and actually *computes* things. It runs Python code in a sandboxed environment to calculate averages, find trends, detect anomalies, compute growth rates, and generate charts. It doesn't just *describe* the data — it *processes* it mathematically.
+
+For example, if someone uploads a sales spreadsheet and asks "Which product line is underperforming?", the Analyst Agent writes and executes Python code to compute YoY growth rates, identifies the laggards, and produces a chart — all autonomously.
+
+**Why it matters for JDs:** "Data analysis" is explicitly mentioned in the JD. This agent shows you understand that AI agents aren't just text generators — they can actually compute and reason over quantitative data.
+
+---
+
+### ✍️ AGENT 5 — The Writer Agent (Report Generator)
+
+**Job Title:** Senior Technical Writer
+
+**What it does:** Once all context is gathered (from RAG, Research, and Analysis agents), the Writer Agent synthesizes everything into a structured, professional report. It uses the best available prompt template (selected by the prompt versioning system) to produce a report with clear sections, citations pointing back to specific document pages, confidence levels for each claim, and a clear distinction between what came from the document vs. what came from external research.
+
+The Writer Agent also adapts its output format based on the downstream use case — a detailed PDF report for a CFO, a concise Slack message for a developer, a structured JSON response for an API consumer.
+
+**Why it matters for JDs:** Prompt engineering and structured output generation. This agent is where all your prompt versioning, output formatting, and context engineering skills are showcased.
+
+---
+
+### 🛡️ AGENT 6 — The Verifier Agent (Quality Gate)
+
+**Job Title:** QA Engineer + Fact Checker
+
+**What it does:** This is the final agent before any response reaches the user, and most junior AI developers skip it entirely — which is exactly why having it makes you stand out. The Verifier Agent takes the Writer's output and checks every claim against the original source documents. It scores the response on faithfulness (did we only say things the documents support?), completeness (did we answer the full question?), and clarity (is the response actually understandable?).
+
+If any claim scores below a threshold, the Verifier Agent flags it, explains what's wrong, and sends the response back to the Writer Agent with specific feedback — a **reflection loop**. The system won't release a response to the user until it passes quality checks. This is how you eliminate hallucinations systematically rather than hoping they don't occur.
+
+**Why it matters for JDs:** Hallucination detection, guardrails, accuracy testing, and reliability are all explicitly in the JD. The Verifier Agent is your answer to all of them in a single elegant component.
+
+---
+
+## 🔄 HOW ALL AGENTS WORK TOGETHER — THE FULL FLOW
+
+Here's the complete user journey from input to output:
+
+```
+USER uploads Sales_Report_Q4.pdf
+USER asks: "Which region underperformed and why? 
+           Is this trend happening industry-wide?"
+                        │
+                        ▼
+            ┌───────────────────────┐
+            │   SUPERVISOR AGENT    │
+            │  Reads query, plans:  │
+            │  1. Parse document    │
+            │  2. Retrieve context  │
+            │  3. Search web        │
+            │  4. Analyze numbers   │
+            │  5. Write report      │
+            │  6. Verify output     │
+            └───────────┬───────────┘
+                        │
+           ┌────────────▼────────────┐
+           │    INGESTION AGENT      │
+           │  Extracts text + tables │
+           │  from the PDF           │
+           └────────────┬────────────┘
+                        │
+           ┌────────────▼────────────┐
+           │      RAG AGENT          │
+           │  Chunks + embeds docs   │
+           │  Retrieves relevant     │
+           │  sections about regions │
+           └──────┬─────────┬────────┘
+                  │         │
+    ┌─────────────▼──┐  ┌───▼─────────────┐
+    │  RESEARCH AGENT│  │  ANALYST AGENT  │
+    │  Searches web  │  │  Computes region│
+    │  for industry  │  │  growth rates,  │
+    │  trend data    │  │  generates chart│
+    └─────────────┬──┘  └───┬─────────────┘
+                  │         │
+           ┌──────▼─────────▼────────┐
+           │      WRITER AGENT       │
+           │  Combines all context   │
+           │  Writes cited report    │
+           │  with confidence scores │
+           └────────────┬────────────┘
+                        │
+           ┌────────────▼────────────┐
+           │     VERIFIER AGENT      │
+           │  Checks every claim     │
+           │  Scores hallucination   │
+           │  ──────────────────     │
+           │  PASS → Send to user    │
+           │  FAIL → Back to Writer  │
+           └────────────┬────────────┘
+                        │
+                        ▼
+            ✅ FINAL VERIFIED REPORT
+            with citations, confidence 
+            scores, and chart
+```
+
+---
+
+## 💻 COMPLETE TECH STACK — EXPLAINED
+
+### Why Each Tool Was Chosen
+
+**LangChain** is the glue. It provides the abstractions for tools, memory, chains, and agent execution that tie everything together. Every other framework plugs into LangChain's ecosystem.
+
+**LangGraph** is the orchestration engine. It's LangChain's answer to complex multi-agent workflows. You define agents as nodes and the routing logic as edges. The Supervisor uses conditional edges to decide which agent runs next based on the current state. LangGraph also handles the state — every agent reads from and writes to a shared state object so nothing gets lost between steps.
+
+**AutoGen** is brought in specifically for the Automation Agent use case. Microsoft's AutoGen excels at multi-agent conversations where agents argue with each other to reach a better answer. You use it for code generation and execution tasks because it has a built-in code executor and human-in-the-loop pattern.
+
+**CrewAI** is used for the Data Analysis crew specifically. CrewAI's strength is defining agents by role, goal, and backstory — which maps perfectly to the analyst pipeline where you have a Collector, an Analyst, and a Writer working sequentially with defined handoffs.
+
+**ChromaDB** is your free, local vector database. No API key, no cloud bills. Runs entirely on your machine. Stores embeddings persistently and serves sub-100ms similarity searches. For production you'd swap to Pinecone or Weaviate — but ChromaDB works identically in code, so swapping is one line change.
+
+**HuggingFace Sentence Transformers** replace OpenAI's embedding API entirely. The `all-MiniLM-L6-v2` model runs locally, produces high-quality embeddings, and costs absolutely zero. This is how you demonstrate you understand the full embedding pipeline, not just API calls.
+
+**Gemini 1.5 Flash** is your primary LLM. It's the only truly free multimodal LLM — it handles text, images, audio, and video in a single API call with a generous free tier. This is what powers the Ingestion Agent's image understanding and audio transcription.
+
+**Ollama + LLaMA 3** is your local LLM fallback. When you've exhausted API quotas or you're demoing offline, every agent automatically falls back to LLaMA 3 running locally. This also demonstrates you understand open-source LLM deployment, which is a highly valued skill.
+
+**LangSmith** is your observability layer. Every single agent call, every tool invocation, every prompt, every response — all logged, traced, and visualized in LangSmith's dashboard for free. This is also where you store prompt versions and run evaluations.
+
+**FastAPI** is the backend API layer. Every agent system needs an API that receives requests asynchronously, queues long-running agent tasks, and streams results back to the frontend. FastAPI with async support and Celery for background jobs covers the full production backend pattern.
+
+**React + React Flow** is the frontend. React Flow specifically lets you render the agent graph visually in real time — users can literally watch the Supervisor route tasks between agents as boxes and arrows light up. This is a jaw-dropping demo feature.
+
+**PostgreSQL on Supabase** stores user sessions, document metadata, application tracking, and agent memory. Supabase gives you a free PostgreSQL instance with a REST API and real-time subscriptions.
+
+**Redis on Upstash** powers the Celery task queue and short-term agent memory cache. Both are free tiers.
+
+**Docker + GitHub Actions** containerize the full stack and provide a CI/CD pipeline that automatically tests and deploys on every push. This is the DevOps skill every JD mentions.
+
+---
+
+## 🧪 THE TESTING FRAMEWORK — FULL EXPLANATION
+
+This is the most neglected part of every student AI project. You're going to do it properly and it will make interviewers' jaws drop.
+
+### Accuracy Testing
+
+You build a golden dataset of 30 question-answer pairs created from your test documents. Every time you change a prompt or update an agent, you run the full evaluation suite and see if accuracy went up or down. LangSmith tracks this over time so you can show a graph of accuracy improving across versions — this is exactly what production AI teams do.
+
+### Reliability Testing
+
+You run the same query 10 times and check if you get consistent answers. A reliable agent should give the same correct answer every time, not sometimes say one number and sometimes another. You track consistency scores alongside accuracy scores.
+
+### Hallucination Detection
+
+The Verifier Agent scores every response but you also run a separate evaluation where an LLM judge reads the original document and the agent's answer, then scores how faithful the answer is. Any score below 0.85 gets flagged and the response is either regenerated or shown to the user with a confidence warning.
+
+### Bias Detection
+
+You build test pairs — the same question about two different demographic groups, two different time periods, or two different document formats — and check if the agent responds differently in suspicious ways. If asking about a male employee vs a female employee produces quantitatively different salary recommendations with identical inputs, that's bias. You document these findings and show the mitigation steps you took.
+
+### Benchmarking
+
+Every agent gets a performance profile — average response latency, token usage, cost per query, accuracy score, hallucination rate. You run this benchmark monthly and track trends. This is exactly what MLOps teams do in production.
+
+---
+
+## 📐 PROJECT STRUCTURE (Folder Layout)
+
+```
+docuforge-ai/
+│
+├── agents/                     # All 7 agents
+│   ├── supervisor_agent.py
+│   ├── ingestion_agent.py
+│   ├── rag_agent.py
+│   ├── research_agent.py
+│   ├── analyst_agent.py
+│   ├── writer_agent.py
+│   └── verifier_agent.py
+│
+├── orchestration/              # LangGraph graph definition
+│   ├── graph.py               # StateGraph + edges
+│   ├── state.py               # Shared state schema
+│   └── router.py              # Conditional routing logic
+│
+├── rag/                        # RAG pipeline
+│   ├── chunker.py
+│   ├── embedder.py
+│   ├── vectorstore.py
+│   └── retriever.py           # Hybrid search
+│
+├── tools/                      # MCP + LangChain tools
+│   ├── web_search_tool.py
+│   ├── code_executor_tool.py
+│   ├── database_tool.py
+│   └── email_tool.py
+│
+├── memory/                     # Memory systems
+│   ├── short_term.py          # LangGraph state
+│   ├── long_term.py           # PostgreSQL
+│   └── episodic.py            # ChromaDB conversation
+│
+├── prompts/                    # Prompt versioning
+│   ├── v1/
+│   ├── v2/
+│   └── v3/                    # Latest versions
+│
+├── eval/                       # Testing framework
+│   ├── test_dataset.json      # 30 golden QA pairs
+│   ├── accuracy_eval.py
+│   ├── hallucination_eval.py
+│   ├── bias_eval.py
+│   └── benchmark.py
+│
+├── api/                        # FastAPI backend
+│   ├── main.py
+│   ├── routes/
+│   └── workers/               # Celery tasks
+│
+├── frontend/                   # React dashboard
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── AgentGraph/    # React Flow visualization
+│   │   │   ├── DocumentUpload/
+│   │   │   └── ResultsDashboard/
+│   │   └── App.jsx
+│
+├── docker-compose.yml          # Full stack orchestration
+├── .github/workflows/          # CI/CD pipeline
+│   └── test-and-deploy.yml
+└── README.md                   # Architecture diagrams + demo
+```
+
+---
+
+## 🗓️ 10-WEEK BUILD PLAN
+
+```
+WEEKS 1-2    FOUNDATION
+             Set up FastAPI + Docker + Supabase + Redis
+             Basic document ingestion for PDF and text
+             Connect Gemini API + Ollama local fallback
+             
+WEEKS 3-4    RAG + MULTIMODAL
+             Build full hybrid RAG pipeline
+             Add image understanding via Gemini Vision
+             Add audio transcription via Whisper
+             ChromaDB setup with persistent storage
+             
+WEEKS 5-6    MULTI-AGENT SYSTEM
+             Build all 6 specialized agents
+             LangGraph StateGraph + Supervisor routing
+             Agent-to-agent state passing
+             Short + long-term memory systems
+             
+WEEK 7       TOOLS + EXTERNAL CONNECTIONS
+             MCP tool servers (web search, code exec)
+             PostgreSQL + MongoDB + Google Sheets connectors
+             AutoGen automation agent
+             CrewAI data analysis crew
+             
+WEEK 8       PROMPT ENGINEERING + EVALS
+             Prompt versioning on LangSmith
+             Build 30-case golden test dataset
+             Accuracy + hallucination + bias eval pipelines
+             Benchmark dashboard
+             
+WEEK 9       FRONTEND + OBSERVABILITY
+             React dashboard with React Flow agent graph
+             Real-time streaming responses
+             LangSmith tracing integration
+             CI/CD with GitHub Actions
+             
+WEEK 10      POLISH + DEPLOY
+             Deploy on Render (free)
+             Architecture diagram + demo video
+             Portfolio writeup + README
+```
+
+---
+
+## 💰 TOTAL COST BREAKDOWN
+
+```
+LLM (Gemini 1.5 Flash)     →  FREE  (15 requests/minute)
+LLM (LLaMA 3 via Ollama)   →  FREE  (unlimited, runs locally)
+Vector DB (ChromaDB)        →  FREE  (runs locally)
+PostgreSQL (Supabase)       →  FREE  (500MB storage)
+Redis (Upstash)             →  FREE  (10,000 commands/day)
+Observability (LangSmith)   →  FREE  (5,000 traces/month)
+Hosting (Render)            →  FREE  (750 hours/month)
+Frontend (Vercel)           →  FREE  (unlimited)
+Auth (Supabase)             →  FREE  (50,000 users)
+CI/CD (GitHub Actions)      →  FREE  (2,000 minutes/month)
+Embeddings (HuggingFace)    →  FREE  (runs locally)
+Audio (Whisper)             →  FREE  (open source, local)
+─────────────────────────────────────────────────────
+TOTAL MONTHLY COST          →  ₹0
+```
+
+---
+
+## 🏆 SKILLS CHECKLIST — EVERY JD REQUIREMENT COVERED
+
+```
+✅ LangChain                  → Core framework throughout
+✅ AutoGen                    → Automation Agent module
+✅ CrewAI                     → Data Analysis crew
+✅ LangGraph                  → Multi-agent orchestration
+✅ Multi-agent systems        → 7-agent collaborative system
+✅ Orchestration              → Supervisor + LangGraph routing
+✅ OpenAI API                 → GPT-4o mini (optional, free credit)
+✅ Gemini API                 → Primary free LLM + multimodal
+✅ Claude API                 → Claude Haiku via free credit
+✅ Prompt engineering         → 3 versioned prompt templates
+✅ Prompt versioning          → LangSmith Hub tracking
+✅ RAG pipelines              → Hybrid semantic + keyword search
+✅ Vector databases           → ChromaDB + pgvector
+✅ External tool connection   → MCP servers, web search
+✅ Database connection        → PostgreSQL, MongoDB, Sheets
+✅ Multimodality              → PDF, image, audio, Excel, slides
+✅ Memory systems             → Short-term + long-term + episodic
+✅ Accuracy testing           → 30-case golden eval dataset
+✅ Reliability benchmarking   → Consistency + latency scoring
+✅ Bias detection             → Paired test comparison pipeline
+✅ Hallucination control      → Verifier Agent + reflection loop
+✅ Guardrails                 → JSON schema + output validation
+✅ Observability              → LangSmith tracing dashboard
+✅ FastAPI                    → Async REST API backend
+✅ React.js                   → Frontend with agent visualization
+✅ Docker                     → Full stack containerization
+✅ CI/CD                      → GitHub Actions pipeline
+✅ Python                     → 100% Python backend
+```
+
+That's every skill from every AI/ML/Agentic AI JD on Internshala and Simplify — one project, zero cost, production-grade. Build this and you're not just a candidate — you're someone who's already doing the job.

@@ -1,0 +1,59 @@
+# LLM & Agent Frameworks
+langchain>=0.2.0
+langchain-core>=0.2.0
+langchain-community>=0.2.0
+langchain-google-genai>=1.0.0
+langgraph>=0.2.0
+langsmith>=0.1.0
+
+# Local LLM
+ollama>=0.3.0
+
+# Multi-agent
+crewai>=1.9.0
+
+# Embeddings & Data
+sentence-transformers>=2.7.0
+numpy>=1.21.0
+
+# Vector DB
+chromadb>=0.5.0
+
+# Data & parsing
+pydantic>=2.0
+pandas>=2.0
+openpyxl>=3.1
+pymupdf>=1.24
+pillow>=10.0
+python-pptx>=1.0
+PyYAML>=6.0
+
+# API
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# Task Queue
+celery>=5.3.0
+redis>=5.0.0
+
+# Database
+supabase>=2.7.0
+psycopg2-binary>=2.9.0
+
+# Observability
+loguru>=0.7.0
+
+# Testing
+pytest>=8.0
+pytest-cov>=5.0
+pytest-asyncio>=0.20
+httpx>=0.25
+
+# Code quality
+ruff>=0.5
+mypy>=1.10
+
+# Utils
+python-dotenv>=1.0
+rank-bm25>=0.2.0

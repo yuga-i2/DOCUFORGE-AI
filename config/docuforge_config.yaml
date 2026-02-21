@@ -1,0 +1,44 @@
+llm:
+  primary_model: "gemini-1.5-flash"
+  fallback_model: "llama3"
+  temperature: 0.2
+  max_tokens: 4096
+
+rag:
+  chunk_size: 512
+  chunk_overlap: 50
+  top_k_results: 4
+  semantic_weight: 0.6
+  keyword_weight: 0.4
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+
+verifier:
+  min_faithfulness_score: 0.85
+  max_reflection_loops: 3
+  hallucination_threshold: 0.75
+
+ingestion:
+  supported_formats:
+    - pdf
+    - png
+    - jpg
+    - jpeg
+    - mp3
+    - wav
+    - xlsx
+    - pptx
+  max_file_size_mb: 50
+
+eval:
+  golden_dataset_path: "eval/test_dataset.json"
+  min_accuracy_threshold: 0.80
+  bias_similarity_threshold: 0.95
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+
+celery:
+  broker_url: "${UPSTASH_REDIS_URL}"
+  result_backend: "${UPSTASH_REDIS_URL}"
