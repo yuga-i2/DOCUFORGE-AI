@@ -22,10 +22,10 @@ DocuForge AI is a production-grade multi-agent document intelligence system buil
 
 ## Demo
 
-▶️ **[Watch Full Demo on YouTube](https://youtu.be/iMASmk7Rky8)**
+[![DocuForge AI Demo](https://img.youtube.com/vi/iMASmk7Rky8/maxresdefault.jpg)](https://youtu.be/iMASmk7Rky8)
 
-See DocuForge AI in action — live document upload, 7 agents executing in real time, 
-ReAct pattern visualization, prompt versioning, and hallucination scoring.
+> Click the thumbnail above to watch the full demo — live document upload, 7 agents executing in real time, 
+> ReAct pattern visualization, prompt versioning, and hallucination scoring.
 
 ---
 
