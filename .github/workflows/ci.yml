@@ -32,3 +32,16 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
+
+      - name: Secret scanning
+        run: |
+          if grep -r "api_key\|apikey\|api-key\|password\|secret" . --include="*.py" --include="*.env" --include="*.yaml" --include="*.yml" \
+             | grep -v ".env.example" | grep -v "node_modules" | grep -v ".git"; then
+            echo "Warning: potential secrets found in code, review manually"
+          else
+            echo "No obvious secrets detected"
+          fi
+
+      - name: Compile LangGraph
+        run: |
+          python -c "from core.agent_graph import compile_docuforge_graph; g = compile_docuforge_graph(); print(f'Graph compiled: {len(g.nodes)} nodes')"

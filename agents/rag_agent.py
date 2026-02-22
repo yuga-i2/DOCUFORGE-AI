@@ -22,10 +22,25 @@ def rag_agent(state: DocuForgeState) -> dict:
     hybrid search. Returns list of retrieved chunk contents and updates agent trace.
     On failure, logs error and returns error state without raising exceptions.
     """
+    session_id = state.get("session_id", "unknown")
+    logger.info(f"[RAG] Starting RAG processing for session {session_id}")
+    
+    # Guard against re-processing already chunked documents
+    if state.get("retrieved_chunks"):
+        chunks = state.get("retrieved_chunks", [])
+        logger.debug(f"[RAG] [SKIP] Chunks already exist ({len(chunks)} chunks), skipping re-chunking")
+        logger.info(f"RAG: chunks already exist for session {session_id}, skipping")
+        return {
+            "routing_decision": "analyst",
+            "agent_trace": ["rag_agent: skipped (already processed)"]
+        }
+    
     ingested_text = state.get("ingested_text", "").strip()
+    logger.debug(f"[RAG] Step 1: Checking ingested text ({len(ingested_text)} chars)")
 
     if not ingested_text:
         error_msg = "No ingested text available for RAG"
+        logger.error(f"[RAG] [ERROR] {error_msg}")
         logger.warning(error_msg)
         return {
             "error_log": [error_msg],
@@ -34,16 +49,19 @@ def rag_agent(state: DocuForgeState) -> dict:
         }
 
     query = state.get("query", "").strip()
-    session_id = state.get("session_id", "unknown")
+    logger.debug(f"[RAG] Query: {query[:100]}..." if len(query) > 100 else f"[RAG] Query: {query}")
 
     try:
         # Chunk the document with session_id as source label
+        logger.info("[RAG] Step 2: Chunking document...")
         documents = chunk_document(ingested_text, source_label=session_id)
+        logger.info(f"[RAG] [DONE] Document chunked into {len(documents)} chunks")
 
         if not documents:
             error_msg = "Failed to chunk document"
             logger.error(error_msg)
             return {
+                "retrieved_chunks": [],  # Important: signal that chunking was attempted
                 "error_log": [error_msg],
                 "routing_decision": "error",
                 "agent_trace": ["rag_agent: chunking failed"],

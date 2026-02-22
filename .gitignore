@@ -1,36 +1,32 @@
-# Environment
-.env
-*.env
-
 # Python
 __pycache__/
-*.py[cod]
+*.pyc
 *.pyo
-*.pyd
-.Python
-env/
-venv/
 .venv/
+venv/
 *.egg-info/
 dist/
 build/
-*.egg
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
 .mypy_cache/
 .ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
 
-# Data & uploads
+# Environment
+.env
+*.env.local
+
+# Data and uploads
 uploads/
-*.pdf
-*.mp3
-*.wav
-*.xlsx
-*.pptx
+*.db
 chroma_db/
+eval/benchmark_results.json
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
 
 # IDE
 .vscode/
@@ -42,5 +38,6 @@ chroma_db/
 .DS_Store
 Thumbs.db
 
-# Docker
+# Logs
 *.log
+celerybeat-schedule

@@ -25,54 +25,80 @@ def _load_config() -> dict:
 
 def route_from_supervisor(state: DocuForgeState) -> str:
     """
-    Determine the next agent to invoke based on current task state.
-    Returns the name of the next LangGraph node to execute. Follows a
-    strict priority order to ensure all requisite steps are completed.
+    Determine the next agent based on current pipeline state.
+    Checks each stage in order and routes to the first incomplete stage.
+    Returns the node name string for LangGraph conditional edge routing.
+    
+    CRITICAL: Error state checked FIRST. If any agent returned an error,
+    stop immediately instead of retrying agents.
     """
-    # Check for errors first
-    error_log = state.get("error_log", [])
-    routing_decision = state.get("routing_decision", "")
-    if error_log and routing_decision == "error":
-        logger.debug("Routing to error handler due to errors in pipeline")
+    session_id = state.get("session_id", "unknown")
+    logger.debug(f"[ROUTER] Routing decision for session {session_id}")
+    logger.debug(f"[ROUTER] Current state keys: {list(state.keys())}")
+    
+    # Error state — STOP PIPELINE IMMEDIATELY (check before all other conditions)
+    if state.get("routing_decision") == "error":
+        error_log = state.get("error_log", [])
+        logger.error("[ROUTER] [ERROR STATE DETECTED]")
+        logger.error(f"[ROUTER] Error: {error_log[-1] if error_log else 'unknown'}")
+        logger.error(f"Router: Routing to error_handler. Error log: {error_log}")
         return "error_handler"
 
-    # Ingestion must happen first
+    # Stage 1: ingestion not done
     ingested_text = state.get("ingested_text", "")
     if not ingested_text:
-        logger.debug("Routing to ingestion agent (no ingested text)")
+        logger.info("[ROUTER] >> Stage 1: INGESTION needed (no ingested_text)")
+        logger.info(f"Router: Routing to ingestion_agent (session {session_id})")
         return "ingestion_agent"
 
-    # RAG must happen before analysis
-    retrieved_chunks = state.get("retrieved_chunks", [])
-    if not retrieved_chunks:
-        logger.debug("Routing to RAG agent (no retrieved chunks)")
-        return "rag_agent"
+    logger.debug(f"[ROUTER] [DONE] Stage 1: Ingestion ({len(ingested_text)} chars)")
 
-    # Check if supervisor recommended research
-    if routing_decision == "needs_research":
-        logger.debug("Routing to research agent (supervisor decision)")
+    # Stage 2: RAG not done — route if chunks don't exist or are empty
+    # This ensures RAG runs even if it returns [] (empty list) initially
+    retrieved_chunks = state.get("retrieved_chunks")
+    if retrieved_chunks is None or retrieved_chunks == []:
+        logger.info("[ROUTER] >> Stage 2: RAG needed (retrieved_chunks is None or empty)")
+        logger.info(f"Router: Routing to rag_agent (session {session_id})")
+        return "rag_agent"
+    
+    logger.debug(f"[ROUTER] [DONE] Stage 2: RAG ({len(retrieved_chunks) if isinstance(retrieved_chunks, list) else 'unknown'} chunks)")
+
+    # Stage 3: external research needed
+    if state.get("routing_decision") == "needs_research":
+        logger.info("[ROUTER] >> Stage 3: RESEARCH needed (supervisor decision)")
+        logger.info(f"Router: Routing to research_agent (session {session_id})")
         return "research_agent"
 
-    # Analysis must happen before writing
+    # Stage 4: analysis not done
     analysis_result = state.get("analysis_result")
     if analysis_result is None:
-        logger.debug("Routing to analyst agent (no analysis result)")
+        logger.info("[ROUTER] >> Stage 4: ANALYSIS needed (no analysis_result)")
+        logger.info(f"Router: Routing to analyst_agent (session {session_id})")
         return "analyst_agent"
 
-    # Writing must happen before verification
+    logger.debug("[ROUTER] [DONE] Stage 4: Analysis")
+
+    # Stage 5: report not written
     draft_report = state.get("draft_report", "")
     if not draft_report:
-        logger.debug("Routing to writer agent (no draft report)")
+        logger.info("[ROUTER] >> Stage 5: WRITING needed (no draft_report)")
+        logger.info(f"Router: Routing to writer_agent (session {session_id})")
         return "writer_agent"
 
-    # Verification is the last step
+    logger.debug("[ROUTER] [DONE] Stage 5: Draft Report")
+
+    # Stage 6: report not verified
     verified_report = state.get("verified_report", "")
     if not verified_report:
-        logger.debug("Routing to verifier agent (no verified report)")
+        logger.info("[ROUTER] >> Stage 6: VERIFICATION needed (no verified_report)")
+        logger.info(f"Router: Routing to verifier_agent (session {session_id})")
         return "verifier_agent"
 
-    # All steps complete
-    logger.debug("Routing to done (all pipeline steps completed)")
+    logger.debug("[ROUTER] [DONE] Stage 6: Verification")
+    logger.info("[ROUTER] [ALL COMPLETE] PIPELINE DONE")
+    
+    # All stages complete
+    logger.info(f"Router: All pipeline stages complete for session {session_id}")
     return "done"
 
 

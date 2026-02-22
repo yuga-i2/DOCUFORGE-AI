@@ -1,1 +1,13 @@
-Writer prompt template v1
+Summarize the following document to answer this query.
+Only use information from the document. Do not add outside knowledge.
+
+Query: {query}
+
+Document: {document_context}
+
+Analysis: {analysis_summary}
+
+Web Research: {web_context}
+
+Reply with JSON only:
+{"title": "...", "executive_summary": "...", "sections": [{"heading": "...", "content": "...", "source": "document", "confidence": 0.7}], "citations": [], "overall_confidence": 0.7, "has_web_context": false, "has_analysis": false}

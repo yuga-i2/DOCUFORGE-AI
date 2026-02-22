@@ -1,154 +1,204 @@
-"""
-DocuForge AI — Analyst Agent
-
-Computes statistics, identifies patterns, and generates visualizations
-from structured data. Produces quantitative analysis results that supplement
-qualitative document insights.
-"""
+"""Analyst Agent that computes statistics and executes code for data analysis."""
 
 import json
 import logging
 import re
-from io import StringIO
 
-import pandas as pd
-
-from core.llm_router import get_llm
+from core.llm_router import get_llm, is_quota_error
 from models.agent_models import AnalysisResult
 from orchestration.state import DocuForgeState
+from tools.code_executor_tool import execute_python_code
 
 logger = logging.getLogger(__name__)
 
 
-def _extract_table_from_chunks(chunks: list[str]) -> pd.DataFrame | None:
+def _safe_parse_json(raw: str) -> dict:
     """
-    Attempt to extract tabular data from retrieved chunks. Looks for markdown
-    tables or structured lists that can be converted to DataFrames.
+    Parse JSON from LLM response, handling all common Groq formatting issues.
+    Strips markdown fences, finds JSON boundaries, returns parsed dict.
+    Raises ValueError if no valid JSON found after all cleanup attempts.
     """
-    for chunk in chunks:
-        if "|" in chunk and "-" in chunk:
-            try:
-                # Try to parse markdown table
-                lines = chunk.split("\n")
-                table_lines = [l for l in lines if "|" in l]
-                if len(table_lines) > 2:
-                    df_text = "\n".join(table_lines)
-                    df = pd.read_csv(StringIO(df_text), sep="|", skipinitialspace=True)
-                    df = df.dropna(axis=1, how="all")
-                    if len(df) > 0:
-                        return df
-            except Exception:
-                continue
-    return None
+    text = raw.strip()
 
+    # Strip markdown code fences
+    text = re.sub(r'^```(?:json)?\s*\n?', '', text, flags=re.MULTILINE)
+    text = re.sub(r'\n?```\s*$', '', text, flags=re.MULTILINE)
+    text = text.strip()
 
-def _extract_numbers_from_chunks(chunks: list[str]) -> list[float]:
-    """
-    Extract all numeric values from chunks using regex. Returns floats for
-    basic statistical analysis.
-    """
-    numbers = []
-    for chunk in chunks:
-        matches = re.findall(r"-?\d+\.?\d*", chunk)
-        for match in matches:
-            try:
-                numbers.append(float(match))
-            except ValueError:
-                pass
-    return numbers
+    # Try parsing cleaned text directly
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
 
+    # Find outermost JSON object
+    start = text.find('{')
+    end = text.rfind('}')
+    if start != -1 and end > start:
+        try:
+            return json.loads(text[start:end + 1])
+        except json.JSONDecodeError:
+            pass
 
-def _compute_statistics(numbers: list[float]) -> dict[str, float]:
-    """
-    Compute basic descriptive statistics from a list of numbers.
-    Returns dict with mean, median, std, min, max.
-    """
-    if not numbers:
-        return {}
+    # Find outermost JSON array
+    start = text.find('[')
+    end = text.rfind(']')
+    if start != -1 and end > start:
+        try:
+            return json.loads(text[start:end + 1])
+        except json.JSONDecodeError:
+            pass
 
-    series = pd.Series(numbers)
-    return {
-        "mean": float(series.mean()),
-        "median": float(series.median()),
-        "std": float(series.std()),
-        "min": float(series.min()),
-        "max": float(series.max()),
-        "count": int(len(numbers)),
-    }
+    raise ValueError(f"No valid JSON found in LLM response: {raw[:200]}")
 
 
 def analyst_agent(state: DocuForgeState) -> dict:
     """
-    Analyze retrieved document chunks to extract structured insights. Computes
-    statistics from numeric data and identifies patterns. Returns AnalysisResult
-    with metrics and summary. On failure, logs error and returns empty result.
+    Analyze retrieved chunks. For text-only documents with no numerical data,
+    returns a lightweight text summary WITHOUT calling the LLM (saves quota).
+    For documents with numerical data, calls LLM once (no retries).
+    On quota error, fails fast and returns a graceful fallback.
     """
-    retrieved_chunks = state.get("retrieved_chunks", [])
-    query = state.get("query", "").strip()
-
-    if not retrieved_chunks:
-        logger.warning("No retrieved chunks available for analysis")
-        return {
-            "analysis_result": AnalysisResult(
-                summary="No quantitative data available in document.",
-                key_metrics={},
-                chart_path=None,
-                anomalies=[],
-            ),
-            "agent_trace": ["analyst_agent: no retrieved chunks available"],
-        }
-
     try:
-        # Attempt to extract tabular data
-        df = _extract_table_from_chunks(retrieved_chunks)
+        retrieved_chunks = state.get("retrieved_chunks", [])
+        query = state.get("query", "")
 
-        # Extract numeric values as fallback
-        numbers = _extract_numbers_from_chunks(retrieved_chunks)
-        metrics = _compute_statistics(numbers)
-
-        anomalies = []
-        if "anomal" in query.lower() or "outlier" in query.lower():
-            if numbers and len(numbers) > 1:
-                series = pd.Series(numbers)
-                q1 = series.quantile(0.25)
-                q3 = series.quantile(0.75)
-                iqr = q3 - q1
-                lower_bound = q1 - 1.5 * iqr
-                upper_bound = q3 + 1.5 * iqr
-                anomalies = [str(n) for n in numbers if n < lower_bound or n > upper_bound]
-
-        summary_parts = []
-        if df is not None:
-            summary_parts.append(f"Found table with {len(df)} rows and {len(df.columns)} columns.")
-        if metrics:
-            summary_parts.append(f"Extracted {metrics.get('count', 0)} numeric values with mean {metrics.get('mean', 0):.2f}.")
-        if anomalies:
-            summary_parts.append(f"Detected {len(anomalies)} anomalous values.")
-
-        summary = " ".join(summary_parts) if summary_parts else "Analysis complete but no structured data found."
-
-        trace_entry = f"analyst_agent: extracted {len(metrics)} metrics, {len(anomalies)} anomalies, processed {len(retrieved_chunks)} chunks"
-        logger.info(trace_entry)
-
-        return {
-            "analysis_result": AnalysisResult(
-                summary=summary,
-                key_metrics=metrics,
-                chart_path=None,
-                anomalies=anomalies,
-            ),
-            "agent_trace": [trace_entry],
-        }
-    except Exception as e:
-        error_msg = f"Analysis failed: {str(e)}"
-        logger.error(error_msg)
-        return {
-            "analysis_result": AnalysisResult(
-                summary=f"Analysis encountered an error: {error_msg}",
+        if not retrieved_chunks:
+            logger.warning("analyst_agent: no retrieved chunks available")
+            analysis_result = AnalysisResult(
+                summary="No data available for analysis.",
                 key_metrics={},
                 chart_path=None,
                 anomalies=[],
-            ),
-            "error_log": [error_msg],
-            "agent_trace": [f"analyst_agent: {error_msg}"],
+            )
+            return {
+                "analysis_result": analysis_result,
+                "agent_trace": state.get("agent_trace", []) + ["analyst_agent: no retrieved chunks"],
+                "routing_decision": "writer",
+            }
+
+        context = "\n".join(retrieved_chunks)
+
+        # ── Fast path: text-only document, no LLM call needed ────────────────
+        # Count distinct numeric patterns (not just any digit)
+        numeric_patterns = re.findall(r"\b\d+(?:\.\d+)?(?:%|kg|km|ms|mb|gb|usd|inr)?\b", context.lower())
+        has_meaningful_numbers = len(numeric_patterns) >= 5  # threshold: at least 5 numbers
+
+        if not has_meaningful_numbers:
+            logger.info("analyst_agent: text-only document — skipping LLM call, generating summary from chunks")
+            # Build a summary directly from the chunks without any LLM call
+            first_chunk = retrieved_chunks[0] if retrieved_chunks else ""
+            summary = (
+                f"Document analysis complete. The document contains {len(retrieved_chunks)} "
+                f"relevant sections addressing the query '{query}'. "
+                f"Content overview: {first_chunk[:300]}..."
+            )
+            analysis_result = AnalysisResult(
+                summary=summary,
+                key_metrics={},
+                chart_path=None,
+                anomalies=[],
+            )
+            return {
+                "analysis_result": analysis_result,
+                "agent_trace": state.get("agent_trace", []) + ["analyst_agent: text-only doc, LLM skipped"],
+                "routing_decision": "writer",
+            }
+
+        # ── LLM path: document has numerical data ────────────────────────────
+        prompt = f"""You are a data analyst. Given the following document context, identify numerical data and write Python code to analyze it.
+
+DOCUMENT CONTEXT:
+{context[:2000]}
+
+Instructions:
+1. Identify tables, numbers, or measurements in the context
+2. Write Python code that computes statistics and relevant metrics
+3. Return ONLY a valid JSON object with these exact keys:
+   - "code": Python code string to execute
+   - "summary": Brief analysis summary (1-2 sentences)
+   - "metrics": Dict of metric_name -> float value
+
+No other text. Valid JSON only."""
+
+        llm = get_llm("analysis")
+
+        try:
+            response = llm.invoke(prompt)
+            response_text = response.content if hasattr(response, "content") else str(response)
+        except Exception as llm_err:
+            if is_quota_error(llm_err):
+                logger.error("analyst_agent: Gemini quota exhausted — using fallback summary (no more retries)")
+                analysis_result = AnalysisResult(
+                    summary=f"Quantitative analysis skipped (API quota reached). Document has {len(retrieved_chunks)} relevant sections.",
+                    key_metrics={},
+                    chart_path=None,
+                    anomalies=[],
+                )
+                return {
+                    "analysis_result": analysis_result,
+                    "agent_trace": state.get("agent_trace", []) + ["analyst_agent: quota exhausted, fallback used"],
+                    "routing_decision": "writer",
+                }
+            raise  # re-raise non-quota errors
+
+        # Parse LLM response using safe JSON parser
+        try:
+            parsed = _safe_parse_json(response_text)
+            code = parsed.get("code", "")
+            summary = parsed.get("summary", "Analysis complete.")
+            metrics = parsed.get("metrics", {})
+        except (ValueError, json.JSONDecodeError) as parse_err:
+            logger.warning("analyst_agent: JSON parse failed — extracting summary from raw response")
+            # Use raw LLM response as summary — better than nothing
+            raw_text = response_text[:800] if response_text else str(parse_err)
+            analysis_result = AnalysisResult(
+                summary=f"Document analysis: {raw_text}",
+                key_metrics={},
+                chart_path=None,
+                anomalies=[]
+            )
+            return {
+                "analysis_result": analysis_result,
+                "agent_trace": state.get("agent_trace", []) + ["analyst_agent: used raw LLM summary (JSON parse fallback)"],
+                "routing_decision": "writer"
+            }
+
+        # Execute code if available
+        success = False
+        if code and code.strip():
+            exec_result = execute_python_code(code)
+            success = exec_result.get("success") == "true"
+            if success and exec_result.get("stdout"):
+                summary += f"\n[Execution output: {exec_result['stdout'][:500]}]"
+
+        analysis_result = AnalysisResult(
+            summary=summary,
+            key_metrics=metrics,
+            chart_path=None,
+            anomalies=[],
+        )
+
+        logger.info(f"analyst_agent: computed {len(metrics)} metrics, code execution success={success}")
+
+        return {
+            "analysis_result": analysis_result,
+            "agent_trace": state.get("agent_trace", []) + [
+                f"analyst_agent: computed {len(metrics)} metrics"
+            ],
+            "routing_decision": "writer",
+        }
+
+    except Exception as e:
+        logger.error(f"analyst_agent error: {str(e)}")
+        analysis_result = AnalysisResult(
+            summary=f"Analysis error: {str(e)}",
+            key_metrics={},
+            chart_path=None,
+            anomalies=[],
+        )
+        return {
+            "analysis_result": analysis_result,
+            "agent_trace": state.get("agent_trace", []) + [f"analyst_agent: error - {str(e)}"],
+            "routing_decision": "writer",
         }

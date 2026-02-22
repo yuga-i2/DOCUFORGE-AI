@@ -15,6 +15,29 @@ from core.llm_router import get_embedding_model
 logger = logging.getLogger(__name__)
 
 
+class EmbeddingWrapper:
+    """
+    Wrapper around HuggingFaceEmbeddings to add a 'name' attribute
+    required by ChromaDB without modifying the original model.
+    """
+    
+    def __init__(self, model):
+        self._model = model
+        self.name = "sentence-transformers/all-MiniLM-L6-v2"
+    
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        """Embed a list of documents."""
+        return self._model.embed_documents(texts)
+    
+    def embed_query(self, text: str) -> list[float]:
+        """Embed a query."""
+        return self._model.embed_query(text)
+    
+    def __call__(self, texts: list[str]) -> list[list[float]]:
+        """Make the wrapper callable for ChromaDB."""
+        return self.embed_documents(texts)
+
+
 def embed_documents(documents: list[Document]) -> list[Document]:
     """
     Validate that documents are ready for embedding. Does not compute embeddings,
@@ -35,10 +58,17 @@ def embed_documents(documents: list[Document]) -> list[Document]:
 def get_embedding_function():
     """
     Get the embedding function by initializing the embedding model.
-    Returns the HuggingFaceEmbeddings instance configured in llm_router.
+    Returns the HuggingFaceEmbeddings instance wrapped for ChromaDB compatibility.
+    The wrapper exposes a 'name' attribute required by ChromaDB.
     """
     logger.debug("Initializing embedding function")
-    return get_embedding_model()
+    model = get_embedding_model()
+    
+    # Wrap the model to add 'name' attribute for ChromaDB
+    wrapped = EmbeddingWrapper(model)
+    logger.debug("Wrapped embeddings model with name attribute: %s", wrapped.name)
+    
+    return wrapped
 
 
 def compute_similarity(vec_a: list[float], vec_b: list[float]) -> float:

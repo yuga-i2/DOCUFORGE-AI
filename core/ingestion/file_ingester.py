@@ -10,6 +10,7 @@ from pathlib import Path
 
 import yaml
 
+from core.ingestion.format_normalizer import normalise_document_text
 from core.ingestion.multimodal_parser import (
     parse_audio,
     parse_excel,
@@ -59,23 +60,43 @@ def validate_file(file_path: str) -> tuple[bool, str]:
 
 def ingest_file(file_path: str) -> str:
     """
-    Ingest a file by detecting its format and routing to the appropriate parser.
-    Returns cleaned, normalised text string. Raises ValueError on unsupported format.
+    Detect file format from extension and route to the correct parser.
+    Returns normalised, clean text regardless of input format.
+    Applies text normalisation after parsing.
+    
+    Args:
+        file_path: Path to document file
+        
+    Returns:
+        Normalized and truncated document text
+        
+    Raises:
+        ValueError: If file format is not supported
     """
-    file = Path(file_path)
-    extension = file.suffix.lstrip(".").lower()
+    path = Path(file_path)
+    extension = path.suffix.lower().lstrip(".")
+    
+    format_map = {
+        "pdf": parse_pdf,
+        "png": parse_image,
+        "jpg": parse_image,
+        "jpeg": parse_image,
+        "mp3": parse_audio,
+        "wav": parse_audio,
+        "xlsx": parse_excel,
+        "xls": parse_excel,
+        "csv": parse_excel,
+        "pptx": parse_pptx,
+        "ppt": parse_pptx,
+    }
 
-    logger.info("Ingesting file: %s (format: %s)", file.name, extension)
+    parser = format_map.get(extension)
+    if parser is None:
+        raise ValueError(f"Unsupported format: .{extension}")
 
-    if extension == "pdf":
-        return parse_pdf(file_path)
-    elif extension in ("png", "jpg", "jpeg"):
-        return parse_image(file_path)
-    elif extension in ("mp3", "wav"):
-        return parse_audio(file_path)
-    elif extension == "xlsx":
-        return parse_excel(file_path)
-    elif extension == "pptx":
-        return parse_pptx(file_path)
-    else:
-        raise ValueError(f"No parser available for extension: {extension}")
+    logger.info("Ingesting file: %s (format: %s)", path.name, extension)
+    raw_text = parser(str(file_path))
+    normalised = normalise_document_text(raw_text)
+
+    logger.debug("Text normalization: %d chars → %d chars", len(raw_text), len(normalised))
+    return normalised

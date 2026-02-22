@@ -1,1 +1,162 @@
-[]
+[
+  {
+    "id": "eval_001",
+    "question": "What was the total revenue for Q4?",
+    "expected_answer": "The Q4 revenue was $15.2 million, exceeding projections by 8%.",
+    "document_source": "q4_sales_report.pdf",
+    "category": "factual",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_002",
+    "question": "Which region had the highest growth rate?",
+    "expected_answer": "The Northern region achieved 24% YoY growth, the highest among all regions.",
+    "document_source": "q4_sales_report.pdf",
+    "category": "factual",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_003",
+    "question": "What contract terms are standard in the industry?",
+    "expected_answer": "Standard terms include 12-month commitment, monthly billing, and 30-day cancellation clause.",
+    "document_source": "sample_contract.pdf",
+    "category": "factual",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_004",
+    "question": "What is the churn rate mentioned in the report?",
+    "expected_answer": "The monthly churn rate is 3.2%, down from 4.1% in the previous quarter.",
+    "document_source": "q4_sales_report.pdf",
+    "category": "factual",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_005",
+    "question": "What were the top 3 product SKUs by revenue?",
+    "expected_answer": "SKU-001 ($4.2M), SKU-003 ($3.8M), and SKU-007 ($2.9M) were the top performers.",
+    "document_source": "inventory_analysis.xlsx",
+    "category": "factual",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_006",
+    "question": "How did Northern and Southern regions compare in market penetration?",
+    "expected_answer": "Northern region achieved 28% market penetration versus 18% for Southern region, indicating stronger market position in the North.",
+    "document_source": "q4_sales_report.pdf",
+    "category": "cross_doc",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_007",
+    "question": "Comparing contract standards with actual company policies, what are the deviations?",
+    "expected_answer": "The company's standard contract includes a 60-day cancellation clause, exceeding the industry standard of 30 days.",
+    "document_source": "sample_contract.pdf, company_policies.pdf",
+    "category": "cross_doc",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_008",
+    "question": "Based on churn and growth trends, what is the net customer acquisition?",
+    "expected_answer": "With 3.2% monthly churn and 6% new customer growth, net acquisition was approximately 2.8% per month.",
+    "document_source": "q4_sales_report.pdf, customer_analytics.pdf",
+    "category": "cross_doc",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_009",
+    "question": "What does the organization chart image show about reporting structure?",
+    "expected_answer": "The organizational chart displays 7 departments reporting to the CEO: Sales, Marketing, Engineering, Operations, Finance, Legal, and People Ops.",
+    "document_source": "org_chart.png",
+    "category": "multimodal",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_010",
+    "question": "What insights can be drawn from the dashboard screenshots in the presentation?",
+    "expected_answer": "The dashboard shows real-time KPIs including 94% uptime, 2.3s average response time, and 99.2% data accuracy metrics.",
+    "document_source": "system_performance_slides.pptx",
+    "category": "multimodal",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_011",
+    "question": "What is the current market share of competitors in the AI space?",
+    "expected_answer": "As of 2025, Competitor A holds 22% market share, Competitor B holds 18%, and market leader holds 35%, with fragmented rest.",
+    "document_source": "industry_analysis_2024.pdf",
+    "category": "research",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_012",
+    "question": "What are the latest regulatory changes affecting SaaS companies?",
+    "expected_answer": "Recent regulations include GDPR enforcement updates, SOC2 Type II requirements becoming mandatory, and new data residency rules in the EU.",
+    "document_source": "regulatory_update_2025.pdf",
+    "category": "research",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_013",
+    "question": "What were the key announcements from competitors this quarter?",
+    "expected_answer": "Major announcements included new product launches by Competitor A, Series C funding by Competitor B, and market expansion by the industry leader.",
+    "document_source": "market_news_digest.pdf",
+    "category": "research",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_014",
+    "question": "Is the revenue metric in the report referring to gross or net revenue?",
+    "expected_answer": "This is a trick question — the report mentions total bookings of $15.2M but actual revenue recognition was $12.8M due to deferred revenue.",
+    "document_source": "q4_sales_report.pdf, accounting_notes.pdf",
+    "category": "trick",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_015",
+    "question": "The report claims the Northern region had the highest growth — but is this true?",
+    "expected_answer": "This is a trick question — while Northern had 24% growth in bookings, the Eastern region actually achieved 26% when accounting for retained customers.",
+    "document_source": "q4_sales_report.pdf",
+    "category": "trick",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_016",
+    "question": "What percentage of revenue came from existing customers versus new customers?",
+    "expected_answer": "71% of revenue came from existing customers (recurring revenue) while 29% came from new customer acquisition.",
+    "document_source": "q4_sales_report.pdf",
+    "category": "factual",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_017",
+    "question": "What is the average contract value (ACV) across all customer segments?",
+    "expected_answer": "The weighted average contract value was $48,500, with enterprise customers at $125K ACV and SMB customers at $8,900 ACV.",
+    "document_source": "customer_segmentation_analysis.xlsx",
+    "category": "factual",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_018",
+    "question": "Are there any contradictions between the executive summary and the detailed data in the report?",
+    "expected_answer": "This is a trick question — the executive summary claims 100% customer satisfaction but detailed survey data shows 87% satisfaction rate.",
+    "document_source": "q4_sales_report.pdf",
+    "category": "trick",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_019",
+    "question": "What customer acquisition cost (CAC) and lifetime value (LTV) metrics are available?",
+    "expected_answer": "CAC averaged $12,400 with a LTV of $156,800, resulting in a favorable 12.7x LTV:CAC ratio.",
+    "document_source": "financial_metrics_dashboard.pdf",
+    "category": "factual",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_020",
+    "question": "If the Northern region continues at 24% growth while churn is 3.2%, will revenue double in 5 years?",
+    "expected_answer": "This is a trick question — the calculation depends on whether growth rate is compounded, whether churn applies to growth, and if the growth rate holds steady.",
+    "document_source": "q4_sales_report.pdf",
+    "category": "trick",
+    "difficulty": "hard"
+  }
+]

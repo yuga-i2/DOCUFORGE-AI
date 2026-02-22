@@ -1,0 +1,128 @@
+DOCUFORGE AI — AGENT FLOW WITH LATENCY ANNOTATIONS
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CLIENT INITIATES UPLOAD                             │
+│                    Document File + Query → POST /analyze                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      FAST: TASK QUEUED (< 100ms)                            │
+│              Task ID returned, client polls /status/{id}                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+                      ┌─────────────────────────┐
+                      │  CELERY WORKER START    │
+                      │  Message: run_analysis_ │
+                      │  _pipeline()            │
+                      └─────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────────────────────┐
+        │  INGESTION AGENT  [~1-3s] — Parse Document             │
+        │  ├─ PDF parsing or multimodal extraction             │
+        │  ├─ Text normalization (boilerplate removal)          │
+        │  └─ Early exit if parse fails (graceful degradation)  │
+        └───────────────────────────────────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────────────────────┐
+        │  RAG SETUP [~0.5s] — Chunk & Embed                    │
+        │  ├─ chunk_document() → 1000-char chunks              │
+        │  ├─ get_embedding_function() → HuggingFace           │
+        │  ├─ Store in ChromaDB ephemeral collection           │
+        │  └─ Parallel: save to long-term memory               │
+        └───────────────────────────────────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────────────────────┐
+        │  RESEARCH AGENT [~2-4s] — Web Context                │
+        │  ├─ web_search_tool(query) → Top 3 results          │
+        │  ├─ Truncate to token_limit                          │
+        │  ├─ Skip if OLLAMA_BASE_URL unavailable (graceful)   │
+        │  └─ Return research_context list                     │
+        └───────────────────────────────────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────────────────────┐
+        │  ANALYST AGENT [~1.5-2.5s] — Extract Patterns        │
+        │  ├─ execute_python_code() on document text           │
+        │  ├─ Detect numerical columns, trends                 │
+        │  ├─ Return structured_analysis dict                  │
+        │  └─ Log code execution errors (never crash)          │
+        └───────────────────────────────────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────────────────────┐
+        │  WRITER AGENT [~2-3s] — Draft Report                 │
+        │  ├─ LLM.invoke() → StructuredReport JSON            │
+        │  ├─ Include: summary, sections[], key_findings[]     │
+        │  ├─ reflection_count = 0                             │
+        │  └─ Route to verifier                                │
+        └───────────────────────────────────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────────────────────┐
+        │  VERIFIER AGENT [~3-4s] (REFLECTION LOOP)             │
+        │  ├─ Compute faithfulness score (LLM)                 │
+        │  ├─ Compute hallucination score (LLM)                │
+        │  ├─ IF scores < threshold:                           │
+        │  │  ├─ reflection_count += 1                         │
+        │  │  ├─ Route back to Writer (max 2 loops)            │
+        │  │  └─ [LOOP TIME: +2-3s per reflection]             │
+        │  └─ ELSE: routing_decision = "complete"             │
+        └───────────────────────────────────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────────────────────┐
+        │  PERSISTENCE [~0.3-0.5s] (Parallel)                  │
+        │  ├─ save_session_result() → Supabase                │
+        │  ├─ store_interaction() → ChromaDB episodic          │
+        │  ├─ save_eval_result_to_db() → eval_results table    │
+        │  └─ Graceful skip if DB unavailable (log WARNING)    │
+        └───────────────────────────────────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────────────────────┐
+        │  TRACING [< 100ms] (Async)                            │
+        │  ├─ LangSmith API call (if LANGCHAIN_TRACING_V2=true)│
+        │  ├─ Log entire agent_trace list                      │
+        │  └─ Non-blocking, doesn't delay response             │
+        └───────────────────────────────────────────────────────┘
+                                    ↓
+        ┌───────────────────────────────────────────────────────┐
+        │  TASK SUCCESS: Return Result                          │
+        │  ├─ verified_report (final JSON)                     │
+        │  ├─ faithfulness_score, hallucination_score          │
+        │  ├─ session_id (for frontend /sessions/{id})         │
+        │  └─ agent_trace (5+ entries)                         │
+        └───────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CLIENT RECEIVES TASK RESULT                              │
+│              Fetches verified report + trace from /sessions/{id}           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+═════════════════════════════════════════════════════════════════════════════
+
+TIMING ANALYSIS:
+
+Total P95 Latency (no reflection): 
+  Ingestion (2.5s) + RAG (0.5s) + Research (3s) + Analyst (2s) + 
+  Writer (2.5s) + Verifier (3.5s) + Persistence (0.5s) = 14.5s
+
+With 1x Reflection Loop (Verifier → Writer → Verifier):
+  Base 14.5s + Writer (2.5s) + Verifier (3.5s) = 20.5s
+
+With 2x Reflection Loop (max allowed):
+  Base 14.5s + 2×(Writer 2.5s + Verifier 3.5s) = 26.5s
+
+Bottlenecks & Optimizations:
+  1. Research Agent (web API): Parallelizable, cache results
+  2. LLM Invocations (Writer, Verifier): Model choice affects latency
+     - Claude 3.5 Sonnet: ~2-3s
+     - GPT-4 Turbo: ~1.5-2s
+     - Local Ollama: ~0.5s (CPU-bound)
+  3. Reflection Loop: Capped at 2 iterations to prevent timeout
+
+Error Handling (Never Blocks):
+  - Ingestion fail → Return error, skip to response
+  - Research unavailable → Continue without web context
+  - ChromaDB offline → Skip episodic memory save (log WARNING)
+  - LLM timeout → Use fallback empty report
+  - Database connection fail → Skip long-term memory (log WARNING)
+
+All errors logged at WARNING level. Never raise exceptions to user.
+
+═════════════════════════════════════════════════════════════════════════════
