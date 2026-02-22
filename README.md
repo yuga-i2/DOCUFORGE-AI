@@ -12,6 +12,7 @@
 
 ---
 
+
 ## What is DocuForge AI?
 
 DocuForge AI is a production-grade multi-agent document intelligence system built to demonstrate advanced AI engineering skills. It accepts any document format and deploys a coordinated pipeline of 7 AI agents that parse, retrieve, analyze, write, and verify a structured report — with built-in hallucination control and full observability.
